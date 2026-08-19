@@ -18,3 +18,8 @@ ENV/
 # OS files
 .DS_Store
 Thumbs.db
+
+# ML Model artifacts (too large for GitHub, regenerate with train.py)
+model.joblib
+*.pkl
+*.h5

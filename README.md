@@ -1,10 +1,12 @@
-# 🏠 CaliValuate AI - California House Price Prediction Web App
+#  CaliValuate AI - California House Price Prediction Web App
+
+# Deploy Link On Cloud https://house-price-prediction-874l.onrender.com/
 
 An end-to-end Machine Learning web application that predicts California median house prices with an interactive real estate valuation dashboard powered by Scikit-Learn and Flask.
 
 ---
 
-## 🌟 Key Features
+##  Key Features
 
 - **Machine Learning Pipeline**: Trained on the California Housing Census dataset with Scikit-Learn Random Forest regression ($R^2 \approx 82.4\%$, MAE $\approx \$31.6\text{k}$).
 - **Automated Feature Engineering**: Calculates real estate domain ratios including rooms per household, bedrooms per room, and population density.
@@ -15,7 +17,7 @@ An end-to-end Machine Learning web application that predicts California median h
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 
 ```text
 ├── housing.csv               # California Census Housing dataset
@@ -64,7 +66,7 @@ Open your browser at **`http://127.0.0.1:5000`**.
 
 ---
 
-## 📊 Model Performance
+##  Model Performance
 
 | Metric | Test Set Value |
 | :--- | :--- |
@@ -77,5 +79,5 @@ Open your browser at **`http://127.0.0.1:5000`**.
 
 ---
 
-## 📜 License
+##  License
 MIT License

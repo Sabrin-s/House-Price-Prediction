@@ -39,7 +39,7 @@ An end-to-end Machine Learning web application that predicts California median h
 
 ---
 
-## 🛠️ Installation & Setup
+##  Installation & Setup
 
 ### 1. Clone the repository
 ```bash

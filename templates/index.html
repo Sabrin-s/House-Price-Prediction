@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="California House Price Prediction - AI & Machine Learning Real Estate Valuation powered by Random Forest regression on California Housing census data.">
+    <title>California Real Estate AI | House Price Valuation Engine</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Leaflet CSS for California Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="glow-bg glow-1"></div>
+    <div class="glow-bg glow-2"></div>
+
+    <div class="app-wrapper">
+        <!-- Top Navigation -->
+        <header class="navbar">
+            <div class="nav-brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-house-laptop"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>CaliValuate <span>AI</span></h1>
+                    <p class="brand-subtitle">California Housing Price Intelligence Engine</p>
+                </div>
+            </div>
+
+            <div class="nav-status-badge">
+                <span class="status-indicator online"></span>
+                <span class="status-label">Model Status: <strong>Trained (R² {{ "%.1f"|format(metrics.metrics.r2_score * 100) if metrics.metrics else "82.4" }}%)</strong></span>
+            </div>
+        </header>
+
+        <!-- Main Hero & Preset Bar -->
+        <section class="preset-section">
+            <div class="preset-header">
+                <span class="section-tag"><i class="fa-solid fa-bolt"></i> Instant Presets</span>
+                <h2>Explore Benchmark Properties</h2>
+            </div>
+            <div class="preset-grid" id="presetContainer">
+                {% for preset in presets %}
+                <button type="button" class="preset-card" data-preset-id="{{ preset.id }}" id="preset-btn-{{ preset.id }}">
+                    <div class="preset-card-icon">
+                        <i class="fa-solid {{ preset.icon }}"></i>
+                    </div>
+                    <div class="preset-card-content">
+                        <span class="preset-tag">{{ preset.tag }}</span>
+                        <h4>{{ preset.name }}</h4>
+                        <span class="preset-loc">{{ preset.data.ocean_proximity }} • Inc: ${{ "%.1f"|format(preset.data.median_income * 10) }}k</span>
+                    </div>
+                </button>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Main Workspace Layout -->
+        <main class="workspace-grid">
+            <!-- Left Column: Input Form & Map -->
+            <div class="workspace-card form-container">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fa-solid fa-sliders"></i>
+                        <h3>Property Parameters</h3>
+                    </div>
+                    <button type="button" class="btn-text" id="resetFormBtn">
+                        <i class="fa-solid fa-arrow-rotate-left"></i> Reset Defaults
+                    </button>
+                </div>
+
+                <form id="predictionForm" autocomplete="off">
+                    <!-- Map & Geo Selection -->
+                    <div class="form-group-section">
+                        <div class="section-label-row">
+                            <label><i class="fa-solid fa-map-location-dot"></i> 1. Location & Coordinates</label>
+                            <span class="hint-pill">Click on map or drag pin</span>
+                        </div>
+                        
+                        <div class="map-wrapper">
+                            <div id="californiaMap"></div>
+                            <div class="map-coords-overlay">
+                                <span>Lat: <strong id="overlayLat">37.8500</strong></span>
+                                <span>Lng: <strong id="overlayLng">-122.2500</strong></span>
+                            </div>
+                        </div>
+
+                        <div class="form-row dual-inputs">
+                            <div class="input-field">
+                                <div class="field-label-row">
+                                    <label for="latitude">Latitude</label>
+                                    <span class="range-badge">32.54 – 41.95</span>
+                                </div>
+                                <div class="input-slider-combo">
+                                    <input type="range" id="latitudeSlider" min="32.54" max="41.95" step="0.01" value="37.85">
+                                    <input type="number" id="latitude" name="latitude" min="32.54" max="41.95" step="0.0001" value="37.85" required>
+                                </div>
+                            </div>
+
+                            <div class="input-field">
+                                <div class="field-label-row">
+                                    <label for="longitude">Longitude</label>
+                                    <span class="range-badge">-124.35 – -114.31</span>
+                                </div>
+                                <div class="input-slider-combo">
+                                    <input type="range" id="longitudeSlider" min="-124.35" max="-114.31" step="0.01" value="-122.25">
+                                    <input type="number" id="longitude" name="longitude" min="-124.35" max="-114.31" step="0.0001" value="-122.25" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ocean Proximity Selector -->
+                    <div class="form-group-section">
+                        <label class="section-label"><i class="fa-solid fa-water"></i> 2. Ocean Proximity</label>
+                        <div class="ocean-pill-group" id="oceanPillGroup">
+                            <label class="ocean-pill active">
+                                <input type="radio" name="ocean_proximity" value="NEAR BAY" checked>
+                                <span class="pill-content">
+                                    <i class="fa-solid fa-bridge-water"></i>
+                                    <span>NEAR BAY</span>
+                                </span>
+                            </label>
+                            <label class="ocean-pill">
+                                <input type="radio" name="ocean_proximity" value="<1H OCEAN">
+                                <span class="pill-content">
+                                    <i class="fa-solid fa-car-side"></i>
+                                    <span>&lt;1H OCEAN</span>
+                                </span>
+                            </label>
+                            <label class="ocean-pill">
+                                <input type="radio" name="ocean_proximity" value="NEAR OCEAN">
+                                <span class="pill-content">
+                                    <i class="fa-solid fa-water"></i>
+                                    <span>NEAR OCEAN</span>
+                                </span>
+                            </label>
+                            <label class="ocean-pill">
+                                <input type="radio" name="ocean_proximity" value="INLAND">
+                                <span class="pill-content">
+                                    <i class="fa-solid fa-mountain-sun"></i>
+                                    <span>INLAND</span>
+                                </span>
+                            </label>
+                            <label class="ocean-pill">
+                                <input type="radio" name="ocean_proximity" value="ISLAND">
+                                <span class="pill-content">
+                                    <i class="fa-solid fa-island-tropical"></i>
+                                    <span>ISLAND</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Financial & Demographic Attributes -->
+                    <div class="form-group-section">
+                        <label class="section-label"><i class="fa-solid fa-chart-line"></i> 3. Socioeconomic & Structural Metrics</label>
+
+                        <!-- Median Income -->
+                        <div class="input-field highlight-field">
+                            <div class="field-label-row">
+                                <label for="median_income">
+                                    <strong>Median Household Income</strong>
+                                    <span class="sub-label">(10k USD / yr)</span>
+                                </label>
+                                <span class="live-val-badge" id="incomeUsdDisplay">$83,250 / year</span>
+                            </div>
+                            <div class="input-slider-combo">
+                                <input type="range" id="medianIncomeSlider" min="0.5" max="15.0" step="0.05" value="8.325">
+                                <input type="number" id="median_income" name="median_income" min="0.49" max="15.0" step="0.01" value="8.3252" required>
+                            </div>
+                        </div>
+
+                        <!-- Grid for 2x2 attributes -->
+                        <div class="form-row-grid">
+                            <!-- Housing Median Age -->
+                            <div class="input-field">
+                                <div class="field-label-row">
+                                    <label for="housing_median_age">House Median Age</label>
+                                    <span class="unit-badge" id="ageValDisplay">41 yrs</span>
+                                </div>
+                                <div class="input-slider-combo">
+                                    <input type="range" id="ageSlider" min="1" max="52" step="1" value="41">
+                                    <input type="number" id="housing_median_age" name="housing_median_age" min="1" max="52" step="1" value="41" required>
+                                </div>
+                            </div>
+
+                            <!-- Total Rooms -->
+                            <div class="input-field">
+                                <div class="field-label-row">
+                                    <label for="total_rooms">Total Block Rooms</label>
+                                    <span class="unit-badge" id="roomsValDisplay">880 rms</span>
+                                </div>
+                                <div class="input-slider-combo">
+                                    <input type="range" id="roomsSlider" min="10" max="15000" step="10" value="880">
+                                    <input type="number" id="total_rooms" name="total_rooms" min="1" max="40000" step="1" value="880" required>
+                                </div>
+                            </div>
+
+                            <!-- Total Bedrooms -->
+                            <div class="input-field">
+                                <div class="field-label-row">
+                                    <label for="total_bedrooms">Total Bedrooms</label>
+                                    <span class="unit-badge" id="bedroomsValDisplay">129 beds</span>
+                                </div>
+                                <div class="input-slider-combo">
+                                    <input type="range" id="bedroomsSlider" min="5" max="4000" step="5" value="129">
+                                    <input type="number" id="total_bedrooms" name="total_bedrooms" min="1" max="10000" step="1" value="129" required>
+                                </div>
+                            </div>
+
+                            <!-- Population -->
+                            <div class="input-field">
+                                <div class="field-label-row">
+                                    <label for="population">Block Population</label>
+                                    <span class="unit-badge" id="popValDisplay">322 people</span>
+                                </div>
+                                <div class="input-slider-combo">
+                                    <input type="range" id="populationSlider" min="10" max="15000" step="10" value="322">
+                                    <input type="number" id="population" name="population" min="1" max="40000" step="1" value="322" required>
+                                </div>
+                            </div>
+
+                            <!-- Households -->
+                            <div class="input-field full-width">
+                                <div class="field-label-row">
+                                    <label for="households">Total Households (Families)</label>
+                                    <span class="unit-badge" id="householdsValDisplay">126 hh</span>
+                                </div>
+                                <div class="input-slider-combo">
+                                    <input type="range" id="householdsSlider" min="5" max="4000" step="5" value="126">
+                                    <input type="number" id="households" name="households" min="1" max="10000" step="1" value="126" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="form-action-row">
+                        <button type="submit" class="btn-primary-gradient" id="predictBtn">
+                            <span class="btn-text-content">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Calculate Valuation
+                            </span>
+                            <span class="btn-spinner" style="display: none;">
+                                <i class="fa-solid fa-circle-notch fa-spin"></i> Processing...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right Column: Live Results & Real Estate Dashboard -->
+            <div class="workspace-card result-container">
+                <!-- Result Hero Card -->
+                <div class="prediction-hero-card">
+                    <div class="hero-header">
+                        <span class="hero-tag"><i class="fa-solid fa-sparkles"></i> AI Estimated Valuation</span>
+                        <span class="hero-confidence" id="confidenceBadge"><i class="fa-solid fa-shield-check"></i> 70% Confidence (±$31.6k)</span>
+                    </div>
+
+                    <div class="price-display-wrapper">
+                        <span class="currency-symbol">$</span>
+                        <h2 class="main-price-val" id="predictedPrice">434,329</h2>
+                    </div>
+
+                    <div class="price-range-bar">
+                        <div class="range-text-row">
+                            <span>Estimated Value Band</span>
+                            <strong id="priceRangeDisplay">$402,702 – $465,957</strong>
+                        </div>
+                        <div class="range-track">
+                            <div class="range-fill"></div>
+                        </div>
+                    </div>
+
+                    <!-- Derived Ratio Badges -->
+                    <div class="metrics-pill-grid">
+                        <div class="metric-pill">
+                            <span class="pill-label">Est. / Room</span>
+                            <span class="pill-val" id="pricePerRoomVal">$494</span>
+                        </div>
+                        <div class="metric-pill">
+                            <span class="pill-label">Rooms / HH</span>
+                            <span class="pill-val" id="roomsPerHhVal">6.98</span>
+                        </div>
+                        <div class="metric-pill">
+                            <span class="pill-label">Bedrooms Ratio</span>
+                            <span class="pill-val" id="bedRatioVal">14.7%</span>
+                        </div>
+                        <div class="metric-pill">
+                            <span class="pill-label">Density (Pop/HH)</span>
+                            <span class="pill-val" id="densityVal">2.56</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insights & Diagnostics Panel -->
+                <div class="analytics-tabs-wrapper">
+                    <div class="analytics-tab-header">
+                        <button type="button" class="tab-btn active" data-tab="model-insights">
+                            <i class="fa-solid fa-chart-simple"></i> Feature Influence
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="model-metrics">
+                            <i class="fa-solid fa-microchip"></i> Model Performance
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="about-california">
+                            <i class="fa-solid fa-circle-info"></i> Dataset Info
+                        </button>
+                    </div>
+
+                    <!-- Tab 1: Feature Importances -->
+                    <div class="tab-pane active" id="tab-model-insights">
+                        <p class="tab-description">
+                            Trained Random Forest feature weights determining California real estate valuations:
+                        </p>
+                        <div class="feature-importance-list">
+                            {% for item in metrics.feature_importances[:6] %}
+                            <div class="importance-row">
+                                <div class="importance-label-group">
+                                    <span class="feat-name">{{ item.feature.replace('_', ' ').title() }}</span>
+                                    <span class="feat-percent">{{ item.importance }}%</span>
+                                </div>
+                                <div class="importance-bar-track">
+                                    <div class="importance-bar-fill" style="width: {{ item.importance }}%;"></div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Model Performance -->
+                    <div class="tab-pane" id="tab-model-metrics">
+                        <div class="stats-metric-grid">
+                            <div class="stat-card">
+                                <span class="stat-label">Model Algorithm</span>
+                                <span class="stat-value">Random Forest</span>
+                                <span class="stat-sub">180 Estimators</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Test R² Score</span>
+                                <span class="stat-value highlight">{{ "%.4f"|format(metrics.metrics.r2_score) if metrics.metrics else "0.8235" }}</span>
+                                <span class="stat-sub">Accuracy benchmark</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Mean Absolute Error</span>
+                                <span class="stat-value">${{ "{:,.2f}".format(metrics.metrics.mae) if metrics.metrics else "31,627.82" }}</span>
+                                <span class="stat-sub">Average valuation delta</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Root Mean Sq. Error</span>
+                                <span class="stat-value">${{ "{:,.2f}".format(metrics.metrics.rmse) if metrics.metrics else "47,956.43" }}</span>
+                                <span class="stat-sub">Standard deviation error</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Training Records</span>
+                                <span class="stat-value">{{ "{:,}".format(metrics.metrics.samples_trained) if metrics.metrics else "16,512" }}</span>
+                                <span class="stat-sub">80% Stratified Split</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Validation Set</span>
+                                <span class="stat-value">{{ "{:,}".format(metrics.metrics.samples_tested) if metrics.metrics else "4,128" }}</span>
+                                <span class="stat-sub">20% Holdout Test</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 3: About Dataset -->
+                    <div class="tab-pane" id="tab-about-california">
+                        <div class="about-card-text">
+                            <h4>California Housing Census Data</h4>
+                            <p>
+                                Based on the 1990 California Census dataset containing 20,640 block group records across the state.
+                            </p>
+                            <ul>
+                                <li><strong>Block Groups</strong>: Typically contain 600 to 3,000 residents.</li>
+                                <li><strong>Median House Value</strong>: Median price of homes in the district.</li>
+                                <li><strong>Engineered Metrics</strong>: Rooms per household, bedrooms per room, and population density are automatically computed by the pipeline.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>California House Price Intelligence System &copy; 2026. Built with Python, Flask, Scikit-Learn & Leaflet.</p>
+        </footer>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

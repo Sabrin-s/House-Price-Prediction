@@ -1,0 +1,133 @@
+{
+  "metrics": {
+    "r2_score": 0.8235,
+    "r2_train": 0.9596,
+    "mae": 31627.82,
+    "rmse": 47956.43,
+    "samples_trained": 16512,
+    "samples_tested": 4128
+  },
+  "feature_importances": [
+    {
+      "feature": "median_income",
+      "importance": 48.23
+    },
+    {
+      "feature": "ocean_proximity_INLAND",
+      "importance": 14.29
+    },
+    {
+      "feature": "population_per_household",
+      "importance": 12.32
+    },
+    {
+      "feature": "longitude",
+      "importance": 5.86
+    },
+    {
+      "feature": "latitude",
+      "importance": 5.53
+    },
+    {
+      "feature": "housing_median_age",
+      "importance": 4.4
+    },
+    {
+      "feature": "rooms_per_household",
+      "importance": 2.49
+    },
+    {
+      "feature": "bedrooms_per_room",
+      "importance": 2.17
+    },
+    {
+      "feature": "total_rooms",
+      "importance": 1.14
+    },
+    {
+      "feature": "households",
+      "importance": 1.09
+    },
+    {
+      "feature": "total_bedrooms",
+      "importance": 1.05
+    },
+    {
+      "feature": "population",
+      "importance": 1.04
+    },
+    {
+      "feature": "ocean_proximity_NEAR OCEAN",
+      "importance": 0.21
+    },
+    {
+      "feature": "ocean_proximity_<1H OCEAN",
+      "importance": 0.11
+    },
+    {
+      "feature": "ocean_proximity_NEAR BAY",
+      "importance": 0.07
+    },
+    {
+      "feature": "ocean_proximity_ISLAND",
+      "importance": 0.0
+    }
+  ],
+  "feature_ranges": {
+    "longitude": {
+      "min": -124.35,
+      "max": -114.31,
+      "mean": -119.57,
+      "median": -118.49
+    },
+    "latitude": {
+      "min": 32.54,
+      "max": 41.95,
+      "mean": 35.63,
+      "median": 34.26
+    },
+    "housing_median_age": {
+      "min": 1.0,
+      "max": 52.0,
+      "mean": 28.64,
+      "median": 29.0
+    },
+    "total_rooms": {
+      "min": 2.0,
+      "max": 39320.0,
+      "mean": 2635.76,
+      "median": 2127.0
+    },
+    "total_bedrooms": {
+      "min": 1.0,
+      "max": 6445.0,
+      "mean": 537.87,
+      "median": 435.0
+    },
+    "population": {
+      "min": 3.0,
+      "max": 35682.0,
+      "mean": 1425.48,
+      "median": 1166.0
+    },
+    "households": {
+      "min": 1.0,
+      "max": 6082.0,
+      "mean": 499.54,
+      "median": 409.0
+    },
+    "median_income": {
+      "min": 0.4999,
+      "max": 15.0001,
+      "mean": 3.87,
+      "median": 3.53
+    }
+  },
+  "ocean_proximity_categories": [
+    "NEAR BAY",
+    "<1H OCEAN",
+    "INLAND",
+    "NEAR OCEAN",
+    "ISLAND"
+  ]
+}
